@@ -1,6 +1,10 @@
-/* No fetch handler: myPanda always uses the network/browser cache, never a stale app shell. */
-self.addEventListener('install',event=>event.waitUntil(self.skipWaiting()));
-self.addEventListener('activate',event=>event.waitUntil(self.clients.claim()));
+/* Versioned app shell only. Personal data stays in LocalStorage/IndexedDB. */
+const CACHE='mypanda-shell-1.6.0-rc.7';
+const files=['index.html','push.js?v=1.6.0-rc.7','manifest.webmanifest','logo.png','icon.png','apple-touch-icon.png'];
+const url=p=>new URL(p,self.registration.scope).href;
+self.addEventListener('install',event=>event.waitUntil((async()=>{const cache=await caches.open(CACHE);await cache.addAll(files.map(p=>new Request(url(p),{cache:'reload'})));await self.skipWaiting()})()));
+self.addEventListener('activate',event=>event.waitUntil((async()=>{for(const key of await caches.keys())if(key.startsWith('mypanda-shell-')&&key!==CACHE)await caches.delete(key);await self.clients.claim()})()));
+self.addEventListener('fetch',event=>{const r=event.request,u=new URL(r.url),root=new URL(self.registration.scope);if(r.method!=='GET'||u.origin!==root.origin||!u.pathname.startsWith(root.pathname))return;const path=u.pathname.slice(root.pathname.length);if(path==='version.json')return;const navigation=r.mode==='navigate'&&(path===''||path==='index.html');if(!navigation&&!files.some(p=>url(p)===u.href))return;event.respondWith((async()=>{try{const response=await fetch(r,{cache:'no-store'});if(response.ok&&response.type==='basic')return response;if(!navigation)return response;throw Error('network')}catch(e){const cache=await caches.open(CACHE),saved=await cache.match(navigation?url('index.html'):r);if(saved)return saved;throw e}})())});
 self.addEventListener('push',event=>{
  let test=false;try{test=event.data?.json()?.type==='test'}catch{}
  event.waitUntil(self.registration.showNotification('myPanda',{
