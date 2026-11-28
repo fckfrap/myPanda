@@ -1,6 +1,6 @@
 /* Versioned app shell only. Personal data stays in LocalStorage/IndexedDB. */
-const CACHE='mypanda-shell-1.6.7';
-const files=['index.html','push.js?v=1.6.7','manifest.webmanifest','logo.png','icon.png','apple-touch-icon.png'];
+const CACHE='mypanda-shell-1.6.8';
+const files=['index.html','push.js?v=1.6.8','manifest.webmanifest','logo.png','icon.png','apple-touch-icon.png'];
 const url=p=>new URL(p,self.registration.scope).href;
 self.addEventListener('install',event=>event.waitUntil((async()=>{const cache=await caches.open(CACHE);await cache.addAll(files.map(p=>new Request(url(p),{cache:'reload'})));await self.skipWaiting()})()));
 self.addEventListener('activate',event=>event.waitUntil((async()=>{for(const key of await caches.keys())if(key.startsWith('mypanda-shell-')&&key!==CACHE)await caches.delete(key);await self.clients.claim()})()));
